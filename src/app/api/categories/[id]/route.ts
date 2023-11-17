@@ -20,9 +20,9 @@ export const DELETE = async (
       },
     })
   } catch (error) {
-    console.error('Error fetching categories:', error)
+    console.error('Error delete categories:', error)
     return new NextResponse(
-      JSON.stringify({ message: 'Error fetching categories' }),
+      JSON.stringify({ message: 'Error delete categories' }),
       {
         status: 500,
         headers: {
@@ -58,7 +58,6 @@ export const PATCH = async (
       },
     })
   } catch (error) {
-    console.error('Error fetching categories:', error)
     return new NextResponse(
       JSON.stringify({ message: 'Error fetching categories' }),
       {

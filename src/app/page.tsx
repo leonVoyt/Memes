@@ -10,6 +10,8 @@ const Page = () => {
   const [categoriesList, setCategoriesList] = useState<CategoryItem[]>([])
   const [update, setUpdate] = useState(false)
   const [quary, setQuary] = useState('')
+  const [updatedCategories, setUpdatedCategories] = useState<CategoryItem[]>([])
+  const [showModal, setShowModal] = useState(false)
 
   const handleSubmit = async () => {
     try {
@@ -23,23 +25,61 @@ const Page = () => {
     setUpdate(!update)
   }
 
+  const handleUpdatedCategories = async () => {
+    try {
+      await axios.put('/api/categories', updatedCategories)
+      closeModal()
+      handleUpdate()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const response = await axios.get(`/api/categories?q=${quary}`)
 
-      setCategoriesList(response.data)
+      // Load the saved order from local storage
+      const storedOrder = localStorage.getItem('categoriesOrder')
+      const categoriesOrder = storedOrder ? JSON.parse(storedOrder) : []
+
+      // Match the loaded order with fetched categories
+      const updatedCategoriesList = response.data.map((category) => {
+        const matchingOrder = categoriesOrder.find(
+          (item) => item.id === category.id
+        )
+        return matchingOrder
+          ? { ...category, order: matchingOrder.order }
+          : category
+      })
+      setCategoriesList(updatedCategoriesList)
     }
-    fetch()
+    fetchData()
+    //
   }, [quary, update])
+  const openModal = () => {
+    setShowModal(true)
+  }
+  const closeModal = () => {
+    setUpdatedCategories([])
+    setShowModal(false)
+  }
 
   const moveItem = (fromIndex: number, toIndex: number) => {
-    setCategoriesList((prevCategoriesList) => {
+    setCategoriesList((prevCategoriesList: CategoryItem[]) => {
       const updatedItems = [...prevCategoriesList]
+      // const updatedItems = prevCategoriesList
+
       const [movedItem] = updatedItems.splice(fromIndex, 1)
       updatedItems.splice(toIndex, 0, movedItem)
-      return updatedItems
+      const updatedOrder = updatedItems.map((el, index) => {
+        return { ...el, order: index }
+      })
+      localStorage.setItem('categoriesOrder', JSON.stringify(updatedOrder))
+      return updatedOrder
     })
   }
+  console.log(categoriesList)
 
   return (
     <>
@@ -54,18 +94,19 @@ const Page = () => {
           </button>
           <DndProvider backend={HTML5Backend}>
             <div>
-              {categoriesList.map(
-                (el, index) =>
-                  el.id !== 0 && (
-                    <Category
-                      key={el.id}
-                      category={el}
-                      update={handleUpdate}
-                      index={index}
-                      moveItem={moveItem}
-                    />
-                  )
-              )}
+              {categoriesList
+                .sort((a, b) => a.order - b.order)
+                .map((el, index) => (
+                  <Category
+                    key={el.id}
+                    category={el}
+                    update={handleUpdate}
+                    index={index}
+                    moveItem={moveItem}
+                    setUpdatedCategories={setUpdatedCategories}
+                    openModal={openModal}
+                  />
+                ))}
               {/* {categoriesList.find((el) => el.id === 1)?.title} */}
               {/* <Category
                 key={categoriesList.find((el) => el.id === 1)?.id}
@@ -76,6 +117,24 @@ const Page = () => {
               /> */}
             </div>
           </DndProvider>
+        </div>
+        <div
+          className={`flex px-[309px] justify-between items-center gap-7 bg-categories fixed bottom-0 w-screen left-0 ${
+            !showModal && 'hidden'
+          }`}
+        >
+          <button
+            className="bg-green-600 rounded-sm h-16 w-full my-5"
+            onClick={() => handleUpdatedCategories()}
+          >
+            Save Changes
+          </button>
+          <button
+            className="border-4 rounded-sm border-categoriesBorder h-16 w-full my-5"
+            onClick={closeModal}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </>
@@ -88,4 +147,5 @@ export type CategoryItem = {
   id: number
   title: string
   isVisible: boolean
+  order?: number
 }

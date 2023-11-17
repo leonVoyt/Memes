@@ -1,4 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server'
+import { CategoryItem } from '~/app/page'
 
 export const GET = async (request: NextRequest) => {
   const { searchParams } = new URL(request.url)
@@ -23,13 +24,16 @@ export const GET = async (request: NextRequest) => {
       },
     })
   } catch (error) {
-    console.error('Error adding data:', error)
-    return new NextResponse(JSON.stringify({ message: 'Error adding data' }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+    console.error('Error fetching data:', error)
+    return new NextResponse(
+      JSON.stringify({ message: 'Error fetching data' }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    )
   }
 }
 
@@ -65,5 +69,38 @@ export const POST = async (request: NextRequest) => {
         'Content-Type': 'application/json',
       },
     })
+  }
+}
+
+export const PUT = async (request: NextRequest) => {
+  const body: CategoryItem[] = await request.json()
+
+  try {
+    body.map(
+      async (el) =>
+        await fetch('http://localhost:5050/categories/' + el.id, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(el),
+        })
+    )
+    return new NextResponse(JSON.stringify({ message: 'sucess' }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+  } catch (error) {
+    return new NextResponse(
+      JSON.stringify({ message: 'Error updating data' }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    )
   }
 }

@@ -3,12 +3,12 @@
     {
       "id": 0,
       "title": "Other",
-      "isVisible": false
+      "isVisible": true
     },
     {
       "id": 1,
       "title": "Leon",
-      "isVisible": false
+      "isVisible": true
     },
     {
       "id": 2,

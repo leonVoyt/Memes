@@ -10,7 +10,14 @@ import { useDrag, useDrop } from 'react-dnd'
 
 const ItemType = 'ITEM'
 
-const Category: FC<CategoryProps> = ({ category, update, index, moveItem }) => {
+const Category: FC<CategoryProps> = ({
+  category,
+  update,
+  index,
+  moveItem,
+  setUpdatedCategories,
+  openModal,
+}) => {
   const [, ref] = useDrag({
     type: ItemType,
     item: { id: category.id, index },
@@ -27,7 +34,6 @@ const Category: FC<CategoryProps> = ({ category, update, index, moveItem }) => {
 
   const [isVisible, setIsVisible] = useState(category.isVisible)
   const [inputValue, setInputValue] = useState('')
-  const [showModal, setShowModal] = useState(false)
 
   const handleDeleteCategory = async (id: number) => {
     try {
@@ -37,29 +43,35 @@ const Category: FC<CategoryProps> = ({ category, update, index, moveItem }) => {
       console.error('Error deleting category:')
     }
   }
-  const handleUpdateCategory = async (id: number) => {
-    try {
-      await axios.patch(`/api/categories/${id}`, {
-        isVisible,
-        title: inputValue,
-      })
-      update()
-      setShowModal(false) // Close the modal after updating
-      return { id, isVisible, title: inputValue }
-    } catch (error) {
-      console.error('Error updating category:')
-    }
-  }
 
-  const openModal = () => {
-    setShowModal(true)
+  const handleUpdateCategory = async () => {
+    openModal()
+    setUpdatedCategories((prev) => {
+      // Check if the category with the same id already exists in the array
+      const existingIndex = prev.findIndex((item) => item.id === category.id)
+
+      // If the category exists, update it; otherwise, add a new one
+      if (existingIndex !== -1) {
+        const updatedItems = [...prev]
+        updatedItems[existingIndex] = {
+          id: category.id,
+          title: inputValue !== '' ? inputValue : category.title,
+          isVisible,
+        }
+        return updatedItems
+      } else {
+        return [
+          ...prev,
+          {
+            id: category.id,
+            title: inputValue !== '' ? inputValue : category.title,
+            isVisible: !isVisible,
+          },
+        ]
+      }
+    })
+    update()
   }
-  const closeModal = () => {
-    setShowModal(false)
-    setIsVisible(category.isVisible)
-    setInputValue('')
-  }
-  console.log(1)
 
   return (
     <>
@@ -77,7 +89,7 @@ const Category: FC<CategoryProps> = ({ category, update, index, moveItem }) => {
             placeholder="Enter Category Name"
             onChange={(e) => {
               setInputValue(e.target.value)
-              openModal()
+              handleUpdateCategory()
             }}
           />
         )}
@@ -86,7 +98,7 @@ const Category: FC<CategoryProps> = ({ category, update, index, moveItem }) => {
             className="pointer-events-auto"
             onClick={() => {
               setIsVisible(!isVisible)
-              openModal()
+              handleUpdateCategory()
             }}
           >
             <Image alt="" src={isVisible ? tumbler : tumbleroff} />
@@ -105,24 +117,6 @@ const Category: FC<CategoryProps> = ({ category, update, index, moveItem }) => {
           </button>
         </div>
       </div>
-      <div
-        className={`flex px-[309px] justify-between items-center gap-7 bg-categories fixed bottom-0 w-screen left-0 ${
-          !showModal && 'hidden'
-        }`}
-      >
-        <button
-          className="bg-green-600 rounded-sm h-16 w-full my-5"
-          onClick={() => handleUpdateCategory(category.id)}
-        >
-          Save Changes
-        </button>
-        <button
-          className="border-4 rounded-sm border-categoriesBorder h-16 w-full my-5"
-          onClick={closeModal}
-        >
-          Cancel
-        </button>
-      </div>
     </>
   )
 }
@@ -134,4 +128,5 @@ type CategoryProps = {
   update: () => void
   index: number
   moveItem: (a: number, b: number) => void
+  // setUpdatedCategories: () => CategoryItem[]
 }
