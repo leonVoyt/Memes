@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react'
+import React, { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
 import Image from 'next/image'
 import axios from 'axios'
 import tumbler from '../../../public/тумблеры.svg'
@@ -17,6 +17,7 @@ const Category: FC<CategoryProps> = ({
   moveItem,
   setUpdatedCategories,
   openModal,
+  isCloseModal,
 }) => {
   const [, ref] = useDrag({
     type: ItemType,
@@ -31,7 +32,9 @@ const Category: FC<CategoryProps> = ({
       }
     },
   })
-
+  useEffect(() => {
+    handleSetDefault()
+  }, [isCloseModal])
   const [isVisible, setIsVisible] = useState(category.isVisible)
   const [inputValue, setInputValue] = useState('')
 
@@ -48,7 +51,9 @@ const Category: FC<CategoryProps> = ({
     openModal()
     setUpdatedCategories((prev) => {
       // Check if the category with the same id already exists in the array
-      const existingIndex = prev.findIndex((item) => item.id === category.id)
+      const existingIndex = prev.findIndex(
+        (item: CategoryItem) => item.id === category.id
+      )
 
       // If the category exists, update it; otherwise, add a new one
       if (existingIndex !== -1) {
@@ -72,13 +77,14 @@ const Category: FC<CategoryProps> = ({
     })
     update()
   }
+  const handleSetDefault = () => {
+    setIsVisible(category.isVisible)
+    setInputValue('')
+  }
 
-  return (
+  return category.id !== 0 ? (
     <>
-      <div
-        ref={(node) => ref(drop(node))}
-        className=" bg-categories w-full h-[50px] flex justify-between px-5 items-center bg-bg border-4 border-categoriesBorder rounded-md "
-      >
+      <div className=" bg-categories w-full h-[50px] flex justify-between px-5 items-center bg-bg border-4 border-categoriesBorder rounded-md ">
         {category.title ? (
           <span>{category.title}</span>
         ) : (
@@ -112,9 +118,40 @@ const Category: FC<CategoryProps> = ({
           <button
             onClick={(e) => e.stopPropagation()}
             className="pointer-events-auto"
+            ref={(node) => ref(drop(node))}
           >
             <Image alt="" src={dragBtn} />
           </button>
+        </div>
+      </div>
+    </>
+  ) : (
+    <>
+      <div className=" bg-categories w-full h-[50px] flex justify-between px-5 items-center bg-bg border-4 border-categoriesBorder rounded-md ">
+        <span>{category.title}</span>
+
+        <div className="flex gap-5">
+          <button
+            className="pointer-events-auto"
+            onClick={() => {
+              setIsVisible(!isVisible)
+              handleUpdateCategory()
+            }}
+          >
+            <Image alt="" src={isVisible ? tumbler : tumbleroff} />
+          </button>
+          <div
+            className=" opacity-0 pointer-events-none"
+            onClick={() => handleDeleteCategory(category.id)}
+          >
+            <Image alt="" src={deleteBtn} />
+          </div>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className=" opacity-0 pointer-events-none"
+          >
+            <Image alt="" src={dragBtn} />
+          </div>
         </div>
       </div>
     </>
@@ -128,5 +165,7 @@ type CategoryProps = {
   update: () => void
   index: number
   moveItem: (a: number, b: number) => void
-  // setUpdatedCategories: () => CategoryItem[]
+  setUpdatedCategories: Dispatch<SetStateAction<CategoryItem[]>>
+  openModal: () => void
+  isCloseModal: boolean
 }

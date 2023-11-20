@@ -7,17 +7,17 @@
     },
     {
       "id": 1,
-      "title": "Leon",
-      "isVisible": true
+      "title": "Sport",
+      "isVisible": false
     },
     {
       "id": 2,
-      "title": "Dima",
+      "title": "Fashion",
       "isVisible": false
     },
     {
       "id": 3,
-      "title": "Alex",
+      "title": "Family",
       "isVisible": false
     }
   ]

@@ -12,6 +12,7 @@ const Page = () => {
   const [quary, setQuary] = useState('')
   const [updatedCategories, setUpdatedCategories] = useState<CategoryItem[]>([])
   const [showModal, setShowModal] = useState(false)
+  const [isCloseModal, setIsCloseModal] = useState(false)
 
   const handleSubmit = async () => {
     try {
@@ -29,7 +30,6 @@ const Page = () => {
     try {
       await axios.put('/api/categories', updatedCategories)
       closeModal()
-      handleUpdate()
     } catch (error) {
       console.error(error)
     }
@@ -44,14 +44,16 @@ const Page = () => {
       const categoriesOrder = storedOrder ? JSON.parse(storedOrder) : []
 
       // Match the loaded order with fetched categories
-      const updatedCategoriesList = response.data.map((category) => {
-        const matchingOrder = categoriesOrder.find(
-          (item) => item.id === category.id
-        )
-        return matchingOrder
-          ? { ...category, order: matchingOrder.order }
-          : category
-      })
+      const updatedCategoriesList = response.data.map(
+        (category: CategoryItem) => {
+          const matchingOrder = categoriesOrder.find(
+            (item: CategoryItem) => item.id === category.id
+          )
+          return matchingOrder
+            ? { ...category, order: matchingOrder.order }
+            : category
+        }
+      )
       setCategoriesList(updatedCategoriesList)
     }
     fetchData()
@@ -68,7 +70,6 @@ const Page = () => {
   const moveItem = (fromIndex: number, toIndex: number) => {
     setCategoriesList((prevCategoriesList: CategoryItem[]) => {
       const updatedItems = [...prevCategoriesList]
-      // const updatedItems = prevCategoriesList
 
       const [movedItem] = updatedItems.splice(fromIndex, 1)
       updatedItems.splice(toIndex, 0, movedItem)
@@ -79,7 +80,6 @@ const Page = () => {
       return updatedOrder
     })
   }
-  console.log(categoriesList)
 
   return (
     <>
@@ -95,26 +95,37 @@ const Page = () => {
           <DndProvider backend={HTML5Backend}>
             <div>
               {categoriesList
-                .sort((a, b) => a.order - b.order)
-                .map((el, index) => (
-                  <Category
-                    key={el.id}
-                    category={el}
-                    update={handleUpdate}
-                    index={index}
-                    moveItem={moveItem}
-                    setUpdatedCategories={setUpdatedCategories}
-                    openModal={openModal}
-                  />
-                ))}
-              {/* {categoriesList.find((el) => el.id === 1)?.title} */}
-              {/* <Category
-                key={categoriesList.find((el) => el.id === 1)?.id}
-                category={categoriesList.find((el) => el.id === 1)}
-                update={handleUpdate}
-                index={0}
-                moveItem={moveItem}
-              /> */}
+                .sort((a, b) => (a.order && b.order ? a.order - b.order : 0))
+                .map(
+                  (el, index) =>
+                    el.id !== 0 && (
+                      <Category
+                        key={el.id}
+                        category={el}
+                        update={handleUpdate}
+                        index={index}
+                        moveItem={moveItem}
+                        setUpdatedCategories={setUpdatedCategories}
+                        openModal={openModal}
+                        isCloseModal={isCloseModal}
+                      />
+                    )
+                )}
+              {categoriesList.map(
+                (el, index) =>
+                  el.id === 0 && (
+                    <Category
+                      key={el.id}
+                      category={el}
+                      update={handleUpdate}
+                      index={index}
+                      moveItem={moveItem}
+                      setUpdatedCategories={setUpdatedCategories}
+                      openModal={openModal}
+                      isCloseModal={isCloseModal}
+                    />
+                  )
+              )}
             </div>
           </DndProvider>
         </div>
@@ -131,7 +142,10 @@ const Page = () => {
           </button>
           <button
             className="border-4 rounded-sm border-categoriesBorder h-16 w-full my-5"
-            onClick={closeModal}
+            onClick={() => {
+              setIsCloseModal(!isCloseModal)
+              closeModal()
+            }}
           >
             Cancel
           </button>
@@ -141,7 +155,7 @@ const Page = () => {
   )
 }
 
-export default React.memo(Page)
+export default Page
 
 export type CategoryItem = {
   id: number
